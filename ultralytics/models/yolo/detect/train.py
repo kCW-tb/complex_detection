@@ -33,7 +33,7 @@ class DetectionTrainer(BaseTrainer):
     def build_dataset(self, img_path, mode="train", batch=None):
         """
         Build YOLO Dataset.
-
+        이미지 경로를 설정하고 훈련모드 기반으로 YOLO 데이터셋 구성
         Args:
             img_path (str): Path to the folder containing images.
             mode (str): `train` mode or `val` mode, users are able to customize different augmentations for each mode.
@@ -43,7 +43,7 @@ class DetectionTrainer(BaseTrainer):
         return build_yolo_dataset(self.args, img_path, batch, self.data, mode=mode, rect=mode == "val", stride=gs)
 
     def get_dataloader(self, dataset_path, batch_size=16, rank=0, mode="train"):
-        """Construct and return dataloader."""
+        """Construct and return dataloader. 데이터로더를 생성하고 반환 rank는 다중 GPU사용시에 필요한 것."""
         assert mode in {"train", "val"}, f"Mode must be 'train' or 'val', not {mode}."
         with torch_distributed_zero_first(rank):  # init dataset *.cache only once if DDP
             dataset = self.build_dataset(dataset_path, mode, batch_size)
@@ -55,7 +55,8 @@ class DetectionTrainer(BaseTrainer):
         return build_dataloader(dataset, batch_size, workers, shuffle, rank)  # return dataloader
 
     def preprocess_batch(self, batch):
-        """Preprocesses a batch of images by scaling and converting to float."""
+        """Preprocesses a batch of images by scaling and converting to float. 배치 이미지에 대해 크기 조정 및 전처리 과정
+        batch는 전처리된 배치 데이터임."""
         batch["img"] = batch["img"].to(self.device, non_blocking=True).float() / 255
         if self.args.multi_scale:
             imgs = batch["img"]
@@ -75,7 +76,8 @@ class DetectionTrainer(BaseTrainer):
         return batch
 
     def set_model_attributes(self):
-        """Nl = de_parallel(self.model).model[-1].nl  # number of detection layers (to scale hyps)."""
+        """Nl = de_parallel(self.model).model[-1].nl  # number of detection layers (to scale hyps).
+        모델 속성들 설정하는 함수, 클래스 수와 하이퍼 파라미터들에 대해서 불러옴 하이퍼 파라미터는 명령행 인자도 가능하지만 deafult.py에서 일반적으로 설정."""
         # self.args.box *= 3 / nl  # scale to layers
         # self.args.cls *= self.data["nc"] / 80 * 3 / nl  # scale to classes and layers
         # self.args.cls *= (self.args.imgsz / 640) ** 2 * 3 / nl  # scale to image size and layers
@@ -105,6 +107,8 @@ class DetectionTrainer(BaseTrainer):
         Returns a loss dict with labelled training loss items tensor.
 
         Not needed for classification but necessary for segmentation & detection
+
+        훈련 중 계산되는 손실 항목을 라벨링하여 반환하는 함수로 나중에 각 탐지 분할에서 사용.
         """
         keys = [f"{prefix}/{x}" for x in self.loss_names]
         if loss_items is not None:
