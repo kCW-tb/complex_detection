@@ -631,9 +631,9 @@ class Multi_v10Segment(Detect):
         super().__init__(nc, ch)
         self.nm = nm  # number of masks
         self.npr = npr  # number of protos
-        self.proto = Proto(ch[0], self.npr, self.nm)  # protos
+        self.proto = Proto(ch[0], self.npr, self.nm)  # protos 초기화
 
-        c4 = max(ch[0] // 4, self.nm)
+        c4 = max(ch[0] // 4, self.nm) 
         self.cv4 = nn.ModuleList(nn.Sequential(Conv(x, c4, 3), Conv(c4, c4, 3), nn.Conv2d(c4, self.nm, 1)) for x in ch)
       
         if self.end2end:
@@ -645,11 +645,11 @@ class Multi_v10Segment(Detect):
             return self.forward_end2end(x)
         
         """Return model outputs and mask coefficients if training, otherwise return outputs and mask coefficients."""
-        p = self.proto(x[0])  # mask protos
-        bs = p.shape[0]  # batch size
+        p = self.proto(x[0])  # mask protos(마스크 프로토타입 생성)
+        bs = p.shape[0]  # batch size(배치 크기)
         
 
-        mc = torch.cat([self.cv4[i](x[i]).view(bs, self.nm, -1) for i in range(self.nl)], 2)  # mask coefficients
+        mc = torch.cat([self.cv4[i](x[i]).view(bs, self.nm, -1) for i in range(self.nl)], 2)  # mask coefficients(마스크 계수 합치는 과정)
         x = Detect.forward(self, x)
         if self.training:
             return x, mc, p
@@ -708,6 +708,8 @@ class Multi_v10Segment(Detect):
             max_det (int): The maximum number of detections to keep.
             nc (int, optional): The number of classes. Defaults to 80.
 
+        모델의 예측결과, 최대 감지 수, 클래스 수
+
         Returns:
             (torch.Tensor): The post-processed predictions with shape (batch_size, max_det, 6),
                 including bounding boxes, scores and cls.
@@ -732,7 +734,7 @@ class Multi_v10Segment(Detect):
         index = index // nc
         boxes = boxes.gather(dim=1, index=index.unsqueeze(-1).repeat(1, 1, boxes.shape[-1]))
 
-        
+        # Rounding Box, 점수, 클래스와 마스크 정보에 대한 최종 예측 결과를 반환
         return torch.cat([boxes, scores.unsqueeze(-1), labels.unsqueeze(-1).to(boxes.dtype), loc_labels.unsqueeze(-1).to(boxes.dtype), action_labels.to(boxes.dtype), masks.to(boxes.dtype) ], dim=-1)
 
 
