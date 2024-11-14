@@ -1,4 +1,6 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
+# 프로젝트에서 사용된거는 BaseModel, DetectionModel, RTDETRDetectionModel 이고
+# attempt_load_weights 함수가 원본이랑 다르게 변형되어있다.
 
 import contextlib
 from copy import deepcopy
